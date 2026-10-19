@@ -3,22 +3,11 @@
 import numpy as np
 import pandas as pd
 
-# Mapeo estándar de variables censales INEGI (2010 -> 2020)
-COLUMNAS_CLAVE_2010 = {
+# Mapeo estándar de variables censales INEGI
+COLUMNAS_CLAVE = {
     "POBTOT": "poblacion_total",
     "P_18YMAS": "poblacion_18_mas",
     "P18YM_PB": "pob_18_mas_posbasica",  # Educación superior/posbásica
-    "PROMHOG": "promedio_ocupantes_hogar",
-    "TVIVHAB": "total_viviendas_habitadas",
-    "VPH_PC": "viv_con_computadora",
-    "VPH_INTER": "viv_con_internet",
-    "VPH_AUTOM": "viv_con_automovil",
-}
-
-COLUMNAS_CLAVE_2020 = {
-    "POBTOT": "poblacion_total",
-    "P_18YMAS": "poblacion_18_mas",
-    "P18YM_PB": "pob_18_mas_posbasica",
     "PROMHOG": "promedio_ocupantes_hogar",
     "TVIVHAB": "total_viviendas_habitadas",
     "VPH_PC": "viv_con_computadora",
@@ -72,19 +61,23 @@ def calcular_indicadores_porcentuales(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: DataFrame con variables relativas (%) agregadas.
     """
     df_ind = df.copy()
+    
+    df_ind.rename(columns=COLUMNAS_CLAVE)
 
     # % Población con educación postbásica sobre la población de 18 años o más
+    # No puedes comparar una AGEB gigantesca de 5,000 habitantes con una pequeña 
+    # de 200 habitantes usando conteos absolutos.
     if "poblacion_18_mas" in df_ind.columns and "pob_18_mas_posbasica" in df_ind.columns:
         df_ind["pct_educacion_posbasica"] = np.where(
-            df_ind["poblacion_18_mas"] > 0,
+            df_ind["poblacion_18_mas"] > 0, # protección contra división por cero
             (df_ind["pob_18_mas_posbasica"] / df_ind["poblacion_18_mas"]) * 100,
-            0.0,
+            0.0, # Si el denominador es mayor a 0, calcula el porcentaje; si es 0, asigna directamente 0.0
         )
 
     # % Viviendas con computadora
     if "total_viviendas_habitadas" in df_ind.columns and "viv_con_computadora" in df_ind.columns:
         df_ind["pct_viv_computadora"] = np.where(
-            df_ind["total_viviendas_habitadas"] > 0,
+            df_ind["total_viviendas_habitadas"] > 0, # protección contra división por cero
             (df_ind["viv_con_computadora"] / df_ind["total_viviendas_habitadas"]) * 100,
             0.0,
         )
